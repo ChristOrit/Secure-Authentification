@@ -33,26 +33,22 @@ ini_set('display_errors', 1);
 error_reporting(E_ALL);
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    // Récupération des données du formulaire
     $firstname = $_POST['firstname'];
     $lastname = $_POST['lastname'];
     $username = $_POST['username'];
     $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
 
-    // Connexion à la base de données SQLite
     $db = new SQLite3('notrebase.db');
 
     if (!$db) {
         die("Erreur de connexion à la base de données : " . $db->lastErrorMsg());
     }
 
-    // Vérification si la table 'users' existe
     $result = $db->query("SELECT name FROM sqlite_master WHERE type='table' AND name='users'");
     if (!$result->fetchArray()) {
         die("La table 'users' n'existe pas dans la base de données.");
     }
 
-    // Vérification si l'utilisateur existe déjà
     $stmt = $db->prepare("SELECT * FROM users WHERE username = :username");
     $stmt->bindValue(':username', $username, SQLITE3_TEXT);
     $existingUser = $stmt->execute()->fetchArray();
@@ -60,7 +56,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if ($existingUser) {
         echo "Erreur : Ce nom d'utilisateur est déjà pris.";
     } else {
-        // Si l'utilisateur n'existe pas, on procède à l'insertion
         $stmt = $db->prepare("INSERT INTO users (firstname, lastname, username, password) VALUES (:firstname, :lastname, :username, :password)");
         $stmt->bindValue(':firstname', $firstname, SQLITE3_TEXT);
         $stmt->bindValue(':lastname', $lastname, SQLITE3_TEXT);
