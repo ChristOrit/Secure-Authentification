@@ -8,77 +8,113 @@
 </head>
 <body>
     <div class="container">
-        <h1>Inscription</h1>
+        <h1><?php echo isset($_GET['edit_id']) ? "Modifier l'utilisateur" : "Inscription"; ?></h1>
+        <?php
+        ini_set('display_errors', 1);
+        error_reporting(E_ALL);
+
+        
+        try {
+            $db = new SQLite3('notrebase.db');
+        } catch (Exception $e) {
+            die("Erreur de connexion à la base de données : " . $e->getMessage());
+        }
+
+     
+        $isEdit = isset($_GET['edit_id']);
+        $userData = null;
+
+        if ($isEdit) {
+            $edit_id = intval($_GET['edit_id']);
+            $stmt = $db->prepare("SELECT * FROM users WHERE id = :id");
+            $stmt->bindValue(':id', $edit_id, SQLITE3_INTEGER);
+            $result = $stmt->execute();
+            $userData = $result->fetchArray(SQLITE3_ASSOC);
+
+            if (!$userData) {
+                echo "<p>Utilisateur introuvable.</p>";
+                exit;
+            }
+        }
+
+       
+        if ($_SERVER["REQUEST_METHOD"] == "POST") {
+            $firstname = $_POST['firstname'];
+            $lastname = $_POST['lastname'];
+            $username = $_POST['username'];
+            $password = isset($_POST['password']) ? $_POST['password'] : null;
+
+            if (empty($firstname) || empty($lastname) || empty($username) || ($isEdit ? false : empty($password))) {
+                echo "<p>Veuillez remplir tous les champs requis.</p>";
+            } else {
+               
+                if (!$isEdit || !empty($password)) {
+                    if (!preg_match("/^(?=.*[A-Z])(?=.*\d).{8,}$/", $password)) {
+                        echo "<p>Le mot de passe doit comporter au moins 8 caractères, une majuscule et un chiffre.</p>";
+                        exit;
+                    }
+                }
+
+                try {
+                    if ($isEdit) {
+                        
+                        if (!empty($password)) {
+                            $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+                            $stmt = $db->prepare("UPDATE users SET firstname = :firstname, lastname = :lastname, username = :username, password = :password WHERE id = :id");
+                            $stmt->bindValue(':password', $hashed_password, SQLITE3_TEXT);
+                        } else {
+                            $stmt = $db->prepare("UPDATE users SET firstname = :firstname, lastname = :lastname, username = :username WHERE id = :id");
+                        }
+                        $stmt->bindValue(':id', $edit_id, SQLITE3_INTEGER);
+                    } else {
+                     
+                        $stmt = $db->prepare("SELECT COUNT(*) FROM users WHERE username = :username");
+                        $stmt->bindValue(':username', $username, SQLITE3_TEXT);
+                        $result = $stmt->execute();
+                        $count = $result->fetchArray(SQLITE3_ASSOC)['COUNT(*)'];
+
+                        if ($count > 0) {
+                            echo "<p>Ce nom d'utilisateur est déjà utilisé. Veuillez en choisir un autre.</p>";
+                            exit;
+                        }
+
+                     
+                        $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+                        $stmt = $db->prepare("INSERT INTO users (firstname, lastname, username, password, is_admin) VALUES (:firstname, :lastname, :username, :password, 0)");
+                        $stmt->bindValue(':password', $hashed_password, SQLITE3_TEXT);
+                    }
+
+                    $stmt->bindValue(':firstname', $firstname, SQLITE3_TEXT);
+                    $stmt->bindValue(':lastname', $lastname, SQLITE3_TEXT);
+                    $stmt->bindValue(':username', $username, SQLITE3_TEXT);
+                    $stmt->execute();
+
+                    echo "<p>" . ($isEdit ? "Utilisateur modifié avec succès !" : "Inscription réussie ! Votre compte a été créé.") . "</p>";
+                    echo "<p><a href='connexion.php'>Connectez vous maintenant</a></p>";
+                    exit;
+                } catch (Exception $e) {
+                    echo "<p>Erreur : " . $e->getMessage() . "</p>";
+                }
+            }
+        }
+        ?>
+
         <form method="POST">
             <label for="firstname">Prénom:</label>
-            <input type="text" id="firstname" name="firstname" required>
+            <input type="text" id="firstname" name="firstname" value="<?php echo $isEdit ? htmlspecialchars($userData['firstname'], ENT_QUOTES, 'UTF-8') : ''; ?>" required>
 
             <label for="lastname">Nom:</label>
-            <input type="text" id="lastname" name="lastname" required>
-            
+            <input type="text" id="lastname" name="lastname" value="<?php echo $isEdit ? htmlspecialchars($userData['lastname'], ENT_QUOTES, 'UTF-8') : ''; ?>" required>
+
             <label for="username">Nom d'utilisateur:</label>
-            <input type="text" id="username" name="username" required>
-            
+            <input type="text" id="username" name="username" value="<?php echo $isEdit ? htmlspecialchars($userData['username'], ENT_QUOTES, 'UTF-8') : ''; ?>" required>
+
             <label for="password">Mot de passe:</label>
-            <input type="password" id="password" name="password" required>
-            
-            <button type="submit">S'inscrire</button>
+            <input type="password" id="password" name="password" <?php echo $isEdit ? '' : 'required'; ?>>
+            <small><?php echo $isEdit ? "Laissez vide pour ne pas modifier le mot de passe." : "Doit contenir au moins 8 caractères, une majuscule et un chiffre."; ?></small>
+
+            <button type="submit"><?php echo $isEdit ? 'Modifier' : "S'inscrire"; ?></button>
         </form>
     </div>
 </body>
 </html>
-
-<?php
-ini_set('display_errors', 1);
-error_reporting(E_ALL);
-
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $firstname = $_POST['firstname'];
-    $lastname = $_POST['lastname'];
-    $username = $_POST['username'];
-    $password = $_POST['password'];
-
-    if (strlen($password) < 8 || strlen($password) > 15) {
-        echo "Le mot de passe doit comporter entre 8 et 15 caractères.<br>";
-    } elseif (strlen($username) < 6 || strlen($username) > 10) {
-        echo "Le nom d'utilisateur doit comporter entre 6 et 10 caractères.<br>";
-    } elseif ($username == $firstname || $username == $lastname) {
-        echo "Le nom d'utilisateur ne peut pas être le même que le prénom ou le nom.<br>";
-    } elseif ($firstname == $lastname) {
-        echo "Le prénom et le nom ne peuvent pas être identiques.<br>";
-    } else {
-        $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
-
-        $db = new SQLite3('notrebase.db');
-
-        if (!$db) {
-            die("Erreur de connexion à la base de données : " . $db->lastErrorMsg());
-        }
-
-        $result = $db->query("SELECT name FROM sqlite_master WHERE type='table' AND name='users'");
-        if (!$result->fetchArray()) {
-            die("La table 'users' n'existe pas dans la base de données.");
-        }
-
-        $stmt = $db->prepare("SELECT * FROM users WHERE username = :username");
-        $stmt->bindValue(':username', $username, SQLITE3_TEXT);
-        $existingUser = $stmt->execute()->fetchArray();
-
-        if ($existingUser) {
-            echo "Erreur : Ce nom d'utilisateur est déjà pris.<br>";
-        } else {
-            $stmt = $db->prepare("INSERT INTO users (firstname, lastname, username, password) VALUES (:firstname, :lastname, :username, :password)");
-            $stmt->bindValue(':firstname', $firstname, SQLITE3_TEXT);
-            $stmt->bindValue(':lastname', $lastname, SQLITE3_TEXT);
-            $stmt->bindValue(':username', $username, SQLITE3_TEXT);
-            $stmt->bindValue(':password', $hashedPassword, SQLITE3_TEXT);
-
-            if ($stmt->execute()) {
-                echo "Utilisateur inscrit avec succès.<br>";
-            } else {
-                echo "Erreur lors de l'insertion : " . $db->lastErrorMsg() . "<br>";
-            }
-        }
-    }
-}
-?>

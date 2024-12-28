@@ -19,8 +19,6 @@
             <button type="submit">Se connecter</button>
         </form>
     </div>
-</body>
-</html>
 
 <?php
 ini_set('display_errors', 1);
@@ -32,26 +30,34 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     try {
         $db = new SQLite3('notrebase.db');
-        
+
         if (!$db) {
             die("Erreur de connexion à la base de données : " . $db->lastErrorMsg());
         }
 
         $stmt = $db->prepare("SELECT * FROM users WHERE username = :username");
         $stmt->bindValue(':username', $username, SQLITE3_TEXT);
-        
         $result = $stmt->execute();
-        
+
         $user = $result->fetchArray(SQLITE3_ASSOC);
 
         if ($user && password_verify($password, $user['password'])) {
-            echo "Connexion réussie.";
-        } else {
-            echo "Nom d'utilisateur ou mot de passe incorrect.";
-        }
+            session_start();
+            $_SESSION['username'] = $username;
 
+            if ($user['is_admin'] == 1) {
+                header("Location: admin-gestion.php");
+                exit;
+            } else {
+                echo "<p>Compte créé avec succès. Bienvenue, $username!</p>";
+            }
+        } else {
+            echo "<p>Nom d'utilisateur ou mot de passe incorrect.</p>";
+        }
     } catch (Exception $e) {
-        echo "Erreur : " . $e->getMessage();
+        echo "<p>Erreur : " . $e->getMessage() . "</p>";
     }
 }
 ?>
+</body>
+</html>
