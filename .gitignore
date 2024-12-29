@@ -1,0 +1,16 @@
+# Ignorer le dossier vendor/
+/vendor/
+
+# Ignorer le fichier composer.lock si vous ne voulez pas versionner les versions exactes
+/composer.lock
+
+# Ignorer les fichiers de configuration de IDE
+.idea/
+.vscode/
+
+# Ignorer les fichiers de logs
+*.log
+
+# Ignorer les fichiers temporaires
+*~
+*.swp
