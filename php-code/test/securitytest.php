@@ -4,7 +4,7 @@ use PHPUnit\Framework\TestCase;
 
 class SecurityTest extends TestCase
 {
-    // Test de validation du token CSRF
+    // Test de protection CSRF
     public function testCsrfTokenValidation()
     {
         $sessionToken = bin2hex(random_bytes(32));
@@ -13,7 +13,7 @@ class SecurityTest extends TestCase
         $this->assertEquals($sessionToken, $postedToken, "Le token CSRF doit correspondre pour valider la requête.");
     }
 
-    // Test du chiffrement des données sensibles
+    // Test de protection des donnees
     public function testSensitiveDataEncryption()
     {
         $data = "Information sensible";
@@ -25,7 +25,7 @@ class SecurityTest extends TestCase
         $this->assertEquals($data, $decryptedData, "Les données doivent être récupérées correctement après chiffrement.");
     }
 
-    // Test de prévention contre les injections SQL
+    // Test de protection contre les injection sql
     public function testSqlInjectionPrevention()
     {
         $username = "test' OR '1'='1";
@@ -39,7 +39,7 @@ class SecurityTest extends TestCase
         $this->assertFalse($result->fetchArray(), "Le système doit empêcher les injections SQL.");
     }
 
-    // Test de hachage des mots de passe
+    // Test de protections des mots de passe
     public function testPasswordHashing()
     {
         $password = "SecurePassword123!";
@@ -49,7 +49,7 @@ class SecurityTest extends TestCase
         $this->assertTrue(password_verify($password, $hashedPassword), "Le mot de passe haché doit être vérifiable.");
     }
 
-    // Test de protection contre les attaques XSS
+    // Test de protection contre XSS
     public function testXssProtection()
     {
         $username = "<script>alert('XSS')</script>";
@@ -59,7 +59,7 @@ class SecurityTest extends TestCase
         $this->assertStringContainsString("&lt;script&gt;", $output, "Les caractères spéciaux doivent être encodés.");
     }
 
-    // Test de configuration des sessions
+    // Test de protection des sessions de connexion
     public function testSessionConfiguration()
     {
         ini_set('session.cookie_secure', '1');
