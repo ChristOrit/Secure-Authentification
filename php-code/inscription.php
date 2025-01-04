@@ -89,7 +89,7 @@
                     $stmt->bindValue(':username', $username, SQLITE3_TEXT);
                     $stmt->execute();
 
-                    echo "<p>" . ($isEdit ? "Utilisateur modifié avec succès !" : "Inscription réussie ") . "</p>";
+                    echo "<p>" . ($isEdit ? "Utilisateur modifié avec succès !" : "Inscription réussie ! Votre compte a été créé.") . "</p>";
                     echo "<p><a href='connexion.php'>Connectez vous maintenant</a></p>";
                     exit;
                 } catch (Exception $e) {
