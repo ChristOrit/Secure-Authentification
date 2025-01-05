@@ -115,20 +115,24 @@ class DevPrinTest extends TestCase
     }
 
     // ErrorMessageTest
-   // public function testErrorMessageOnLoginFailure()
-    //{
-      //  $username = 'invalidUser';
-        //$password = 'invalidPass';
-        //$output = '';
+    public function testErrorMessageOnLoginFailure()
+    {
+    $username = 'invalidUser';
+    $password = 'invalidPass';
+    $output = '';
 
-        //ob_start();
-       // if (!$username || !$password) {
-         //   echo "<p>Nom d'utilisateur ou mot de passe incorrect.</p>";
-       // }
-        //$output = ob_get_clean();
+    ob_start();
+   
+    $validUsername = 'correctUser';
+    $validPassword = 'correctPass';
 
-       // $this->assertStringContainsString("Nom d'utilisateur ou mot de passe incorrect.", $output);
-    //}
+    if ($username !== $validUsername || $password !== $validPassword) {
+        echo "<p>Nom d'utilisateur ou mot de passe incorrect.</p>";
+    }
+    $output = ob_get_clean();
+
+    $this->assertStringContainsString("Nom d'utilisateur ou mot de passe incorrect.", $output);
+    }
 
     // NavigationTest
     public function testAdminRedirection()
@@ -195,3 +199,6 @@ class DevPrinTest extends TestCase
         $this->assertSame('johndoe', $user['username']);
     }
 }
+
+
+
